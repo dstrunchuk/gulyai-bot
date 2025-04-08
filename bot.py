@@ -2,7 +2,7 @@ import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-TOKEN = os.getenv("7675911313:AAFOLQk94xXBZ1oJ8YkFsp_RseEmxqhyGZs")  # ✅ теперь безопасно
+TOKEN = os.getenv("7675911313:AAGJVySgJ02_vIWIrVa3GbulP4X2Qvl1xbk")  # ✅ теперь безопасно
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Получена команда /start")
