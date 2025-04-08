@@ -2,12 +2,14 @@ import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-import os
+TOKEN = os.getenv("TOKEN")
 
-TOKEN = os.getenv("7675911313:AAGJVySgJ02_vIWIrVa3GbulP4X2Qvl1xbk")  # ✅ теперь безопасно
+if not TOKEN:
+    print("❌ ОШИБКА: переменная TOKEN не найдена")
+    exit()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Получена команда /start")
+    print("✅ Получен /start")
     text = (
         "Как работает Gulyai:\n"
         "1. Заполни анкету\n"
@@ -21,15 +23,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def next_step(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(
-        text="⚠️ Не встречайтесь в подозрительных местах. Встречайтесь в людных зонах!"
-    )
+    await query.edit_message_text("⚠️ Внимание: гуляйте только в безопасных местах!")
 
 def main():
+    print(f"📦 Токен получен: {TOKEN[:5]}...")
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(next_step, pattern="^next_step$"))
-    print("Бот работает! ✅")
+    print("🚀 Бот запущен!")
     app.run_polling()
 
 if __name__ == "__main__":
