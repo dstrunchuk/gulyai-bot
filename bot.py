@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-TOKEN = "7512181077:AAFlnJ-gEJMFRbeDX5nO8cOpcErRPPX2vl4"
+TOKEN = "7675911313:AAFOLQk94xXBZ1oJ8YkFsp_RseEmxqhyGZs"
 
 # /start команда
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
