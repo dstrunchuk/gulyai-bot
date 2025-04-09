@@ -24,3 +24,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             resize_keyboard=True
         )
     )
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
