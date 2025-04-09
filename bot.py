@@ -91,6 +91,8 @@ async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = json.loads(update.message.web_app_data.data)
+        print("🔥 Данные из WebApp:")
+        print(data)
         save_user(data)
 
         print("🔥 Пришли данные из WebApp:")
