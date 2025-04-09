@@ -1,5 +1,4 @@
 import os
-import asyncio
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 from telegram.ext import (
     ApplicationBuilder,
@@ -9,13 +8,10 @@ from telegram.ext import (
     filters
 )
 
-# 🔐 Получение токена из переменных Railway
 TOKEN = os.environ.get("TOKEN")
-
-# 🌐 URL твоего WebApp на Vercel
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 
-# 📌 Команда /start: приветствие + кнопка
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "👋 Как работает Gulyai:\n"
@@ -38,20 +34,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     )
 
-# 🔁 Приём анкеты из WebApp
+# Приём анкеты
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.message.web_app_data.data
     await update.message.reply_text(f"📬 Анкета получена:\n\n{data}")
 
-# 🚀 Main функция запуска
-async def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+# Старт приложения
+app = ApplicationBuilder().token(TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
+print("🤖 Бот запущен. Ожидает команду /start")
 
-    print("🤖 Бот запущен. Ожидает команды /start")
-    await app.run_polling()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+app.run_polling()
