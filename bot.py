@@ -3,7 +3,9 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    WebAppInfo
+    WebAppInfo,
+    ReplyKeyboardMarkup,
+    KeyboardButton
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -17,7 +19,7 @@ from telegram.ext import (
 TOKEN = os.environ.get("TOKEN")
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 
-# /start — первое сообщение
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "👋 Как работает Gulyai:\n\n"
@@ -36,7 +38,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-# Нажатие на "Далее"
+# После "Далее"
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -50,21 +52,40 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
     await query.message.reply_text(
         warning_text,
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]
-        ])
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
+            resize_keyboard=True
+        )
     )
 
-# Приём анкеты из WebApp
+# Команда /form — снова показать кнопку
+async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "📝 Хочешь снова заполнить анкету? Нажми кнопку ниже:",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
+            resize_keyboard=True
+        )
+    )
+
+# Обработка анкеты
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.message.web_app_data.data
-    await update.message.reply_text(f"📬 Анкета получена:\n\n{data}")
 
-# Старт приложения
+    await update.message.reply_text(
+        f"📬 Анкета получена:\n\n{data}",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
+            resize_keyboard=True
+        )
+    )
+
+# Запуск
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
+app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 
-print("🤖 Бот запущен и ждёт пользователей!")
+print("🤖 Gulyai готов к запуску!")
 app.run_polling()
