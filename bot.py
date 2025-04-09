@@ -3,6 +3,16 @@ from telegram.ext import ContextTypes
 
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 
+from telegram.ext import ApplicationBuilder, CommandHandler
+
+async def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+    
+    # Добавь свои handlers, например:
+    app.add_handler(CommandHandler("start", start))
+
+    await app.run_polling()
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "👋 Как работает Gulyai:\n"
