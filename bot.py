@@ -99,10 +99,11 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(data)
 
         # Достаём ключи с подстраховкой
-        name = data.get("name") or "—"
-        location = data.get("location") or data.get("city") or "—"
-        purpose = data.get("purpose") or data.get("goal") or "—"
-        interests = data.get("interests") or data.get("aboutMe") or "—"
+         # Достаём ключи по реальному JSON
+        name = data.get("name", "—")
+        location = data.get("district", "—")
+        purpose = data.get("activity", "—")
+        interests = data.get("interests", "—")
 
         await update.message.reply_text(
             f"📬 Анкета получена!\n\n"
