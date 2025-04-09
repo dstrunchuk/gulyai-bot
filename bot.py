@@ -93,11 +93,17 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = json.loads(update.message.web_app_data.data)
         save_user(data)
 
+        # ✅ Достаём правильные ключи
+        name = data.get("name")
+        location = data.get("location") or data.get("city")
+        purpose = data.get("purpose") or data.get("goal")
+        interests = data.get("interests")
+
         await update.message.reply_text(
             f"📬 Анкета получена!\n\n"
             f"Имя: {data.get('name')}\n"
-            f"Район: {data.get('city')}\n"
-            f"Цель: {data.get('goal')}\n"
+            f"Район: {data.get('location')}\n"
+            f"Цель: {data.get('purpose')}\n"
             f"Интересы: {data.get('interests')}",
             reply_markup=ReplyKeyboardMarkup(
                 [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
@@ -116,4 +122,14 @@ app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 
 print("🤖 Gulyai: готов к приёму анкет!")
-app.run_polling()
+
+from telegram.ext import WebhookHandler
+
+app.add_handler(WebhookHandler())
+
+app.run_webhook(
+    listen="0.0.0.0",
+    port=int(os.environ.get("PORT", 8000)),
+    webhook_url=f"https://{os.environ['RAILWAY_PUBLIC_DOMAIN']}/webhook"
+)
+
