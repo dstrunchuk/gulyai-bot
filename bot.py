@@ -1,20 +1,26 @@
 import os
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    WebAppInfo
+)
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     ContextTypes,
     MessageHandler,
     filters,
+    CallbackQueryHandler
 )
 
 TOKEN = os.environ.get("TOKEN")
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 
-# /start — первый блок
+# /start — приветствие + inline-кнопка Далее
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "👋 Как работает Gulyai:\n"
+        "👋 Как работает Gulyai:\n\n"
         "1️⃣ Заполни анкету\n"
         "Укажи имя, район, интересы — ничего лишнего. Просто, быстро и по делу.\n\n"
         "2️⃣ Нажми “Готов к встрече”\n"
@@ -23,42 +29,39 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Захотел — написал, договорился, встретился. Никаких лишних платформ."
     )
 
-    await update.message.reply_text(
-        text,
-        parse_mode="Markdown",
-        reply_markup=ReplyKeyboardMarkup(
-            [[KeyboardButton("➡️ Далее")]],
-            resize_keyboard=True
-        )
+    inline = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
+    ])
+
+    await update.message.reply_text(text, reply_markup=inline)
+
+# Обработка нажатия "Далее"
+async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    text = (
+        "⚠️ *Внимание!*\n"
+        "Не встречайтесь в незнакомых вам местах, улицах.\n"
+        "Гуляйте в более обоюдных местах!"
     )
 
-# После нажатия "Далее" — предупреждение + кнопка WebApp
-async def continue_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.text == "➡️ Далее":
-        warning = (
-            "⚠️ *Внимание!*\n"
-            "Не встречайтесь в незнакомых местах, улицах.\n"
-            "Гуляйте в более обоюдных местах!"
-        )
-        await update.message.reply_text(
-            warning,
-            parse_mode="Markdown",
-            reply_markup=ReplyKeyboardMarkup(
-                [[KeyboardButton(text="📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
-                resize_keyboard=True
-            )
-        )
+    inline = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]
+    ])
 
-# Приём анкеты
+    await query.edit_message_text(text=text, reply_markup=inline, parse_mode="Markdown")
+
+# Приём данных из WebApp
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.message.web_app_data.data
     await update.message.reply_text(f"📬 Анкета получена:\n\n{data}")
 
-# Запуск
+# Запуск приложения
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^➡️ Далее$"), continue_flow))
+app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 
-print("🤖 Бот запущен. Ждёт команду /start")
+print("🤖 Бот запущен. Готов встречать новых гуляющих!")
 app.run_polling()
