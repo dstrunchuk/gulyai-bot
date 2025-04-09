@@ -1,11 +1,13 @@
 import os
+import json
+import logging
 from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     WebAppInfo,
     ReplyKeyboardMarkup,
-    KeyboardButton
+    KeyboardButton,
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -13,13 +15,30 @@ from telegram.ext import (
     ContextTypes,
     CallbackQueryHandler,
     MessageHandler,
-    filters
+    filters,
 )
 
+# ✅ Конфигурация
 TOKEN = os.environ.get("TOKEN")
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
+USERS_FILE = "users.json"
 
-# /start
+logging.basicConfig(level=logging.INFO)
+
+# 🧠 Хранилище
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return []
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
+
+def save_user(user_data):
+    users = load_users()
+    users.append(user_data)
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=2)
+
+# 🚀 /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "👋 Как работает Gulyai:\n\n"
@@ -38,7 +57,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-# После "Далее"
+# ⚠️ После "Далее"
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -58,7 +77,7 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
         )
     )
 
-# Команда /form — снова показать кнопку
+# 🔁 /form — повторный вызов
 async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📝 Хочешь снова заполнить анкету? Нажми кнопку ниже:",
@@ -68,24 +87,33 @@ async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     )
 
-# Обработка анкеты
+# 📥 Прием анкеты
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    data = update.message.web_app_data.data
+    try:
+        data = json.loads(update.message.web_app_data.data)
+        save_user(data)
 
-    await update.message.reply_text(
-        f"📬 Анкета получена:\n\n{data}",
-        reply_markup=ReplyKeyboardMarkup(
-            [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
-            resize_keyboard=True
+        await update.message.reply_text(
+            f"📬 Анкета получена!\n\n"
+            f"Имя: {data.get('name')}\n"
+            f"Район: {data.get('city')}\n"
+            f"Цель: {data.get('goal')}\n"
+            f"Интересы: {data.get('interests')}",
+            reply_markup=ReplyKeyboardMarkup(
+                [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
+                resize_keyboard=True
+            )
         )
-    )
+    except Exception as e:
+        logging.error(f"Ошибка обработки анкеты: {e}")
+        await update.message.reply_text("❌ Ошибка при обработке анкеты. Попробуйте снова.")
 
-# Запуск
+# 🚀 Запуск
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
 app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 
-print("🤖 Gulyai готов к запуску!")
+print("🤖 Gulyai: готов к приёму анкет!")
 app.run_polling()
