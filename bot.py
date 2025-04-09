@@ -93,18 +93,21 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = json.loads(update.message.web_app_data.data)
         save_user(data)
 
-        # ✅ Достаём правильные ключи
-        name = data.get("name")
-        location = data.get("location") or data.get("city")
-        purpose = data.get("purpose") or data.get("goal")
-        interests = data.get("interests")
+        print("🔥 Пришли данные из WebApp:")
+        print(data)
+
+        # Достаём ключи с подстраховкой
+        name = data.get("name") or "—"
+        location = data.get("location") or data.get("city") or "—"
+        purpose = data.get("purpose") or data.get("goal") or "—"
+        interests = data.get("interests") or data.get("aboutMe") or "—"
 
         await update.message.reply_text(
             f"📬 Анкета получена!\n\n"
-            f"Имя: {data.get('name')}\n"
-            f"Район: {data.get('location')}\n"
-            f"Цель: {data.get('purpose')}\n"
-            f"Интересы: {data.get('interests')}",
+            f"Имя: {name}\n"
+            f"Район: {location}\n"
+            f"Цель: {purpose}\n"
+            f"Интересы: {interests}",
             reply_markup=ReplyKeyboardMarkup(
                 [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
                 resize_keyboard=True
@@ -114,19 +117,7 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(f"Ошибка обработки анкеты: {e}")
         await update.message.reply_text("❌ Ошибка при обработке анкеты. Попробуйте снова.")
 
-# 🚀 Запуск
-import asyncio
-
-async def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-
-    # Хендлеры
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
-    app.add_handler(CommandHandler("form", form))
-    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
-
-    # 🚀 Запускаем как Webhook
+# 🚀 Запуск через polling (надёжно)
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
