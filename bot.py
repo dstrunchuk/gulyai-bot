@@ -115,21 +115,23 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Ошибка при обработке анкеты. Попробуйте снова.")
 
 # 🚀 Запуск
+import asyncio
+
+async def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    # Хендлеры
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
+    app.add_handler(CommandHandler("form", form))
+    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
+
+    # 🚀 Запускаем как Webhook
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
 app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 
-print("🤖 Gulyai: готов к приёму анкет!")
-
-from telegram.ext import WebhookHandler
-
-app.add_handler(WebhookHandler())
-
-app.run_webhook(
-    listen="0.0.0.0",
-    port=int(os.environ.get("PORT", 8000)),
-    webhook_url=f"https://{os.environ['RAILWAY_PUBLIC_DOMAIN']}/webhook"
-)
-
+print("🤖 Gulyai готов к приёму анкет!")
+app.run_polling()
