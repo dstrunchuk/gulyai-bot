@@ -1,37 +1,26 @@
-import os
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
+from telegram.ext import ContextTypes
 
-TOKEN = os.getenv("TOKEN")
-
-if not TOKEN:
-    print("❌ ОШИБКА: переменная TOKEN не найдена")
-    exit()
+WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("✅ Получен /start")
     text = (
-        "Как работает Gulyai:\n"
-        "1. Заполни анкету\n"
-        "2. Нажми 'Готов к встрече'\n"
-        "3. Общайся с другими прямо сейчас."
+        "👋 Как работает Gulyai:\n"
+        "1️⃣ Заполни анкету\n"
+        "Укажи имя, район, интересы — ничего лишнего. Просто, быстро и по делу.\n\n"
+        "2️⃣ Нажми “Готов к встрече”\n"
+        "Бот покажет тебе других людей, которые тоже хотят выйти и пообщаться прямо сейчас.\n\n"
+        "3️⃣ Связь через Telegram\n"
+        "Захотел — написал, договорился, встретился. Никаких лишних платформ.\n\n"
+        "⚠️ *Внимание!* Не встречайтесь в незнакомых вам местах, улицах. "
+        "Гуляйте в более обоюдных местах!"
     )
-    keyboard = [[InlineKeyboardButton("Далее", callback_data="next_step")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(text, reply_markup=reply_markup)
 
-async def next_step(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text("⚠️ Внимание: гуляйте только в безопасных местах!")
-
-def main():
-    print(f"📦 Токен получен: {TOKEN[:5]}...")
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(next_step, pattern="^next_step$"))
-    print("🚀 Бот запущен!")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+    await update.message.reply_text(
+        text,
+        parse_mode="Markdown",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton(text="📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
+            resize_keyboard=True
+        )
+    )
