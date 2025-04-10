@@ -106,7 +106,7 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"📬 Анкета получена!\n\n"
             f"Имя: {name}\n"
-            f"Адрес: {address}"
+            f"Адрес: {address}\n"
             f"Возраст: {age}\n"
             f"Интересы: {interests}\n"
             f"Цель: {activity}\n"
