@@ -91,26 +91,26 @@ async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = json.loads(update.message.web_app_data.data)
-        print("🔥 Данные из WebApp:")
-        print(data)
         save_user(data)
-
         print("🔥 Пришли данные из WebApp:")
         print(data)
 
-        # Достаём ключи с подстраховкой
-         # Достаём ключи по реальному JSON
+        # ✅ Обновляем ключи
         name = data.get("name", "—")
-        location = data.get("district", "—")
-        purpose = data.get("activity", "—")
+        district = data.get("location", "—")
+        age = data.get("age", "—")
         interests = data.get("interests", "—")
+        activity = data.get("activity", "—")
+        vibe = data.get("vibe", "—")
 
         await update.message.reply_text(
             f"📬 Анкета получена!\n\n"
             f"Имя: {name}\n"
-            f"Район: {location}\n"
-            f"Цель: {purpose}\n"
-            f"Интересы: {interests}",
+            f"Район: {district}\n"
+            f"Возраст: {age}\n"
+            f"Интересы: {interests}\n"
+            f"Цель: {activity}\n"
+            f"Настроение: {vibe}",
             reply_markup=ReplyKeyboardMarkup(
                 [[KeyboardButton("📝 Заполнить анкету", web_app=WebAppInfo(url=WEBAPP_URL))]],
                 resize_keyboard=True
