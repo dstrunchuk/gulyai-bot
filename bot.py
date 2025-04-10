@@ -97,7 +97,7 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # ✅ Обновляем ключи
         name = data.get("name", "—")
-        district = data.get("location", "—")
+        address = data.get("address", "—")
         age = data.get("age", "—")
         interests = data.get("interests", "—")
         activity = data.get("activity", "—")
@@ -106,7 +106,7 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"📬 Анкета получена!\n\n"
             f"Имя: {name}\n"
-            f"Район: {district}\n"
+            f"Адрес: {address}"
             f"Возраст: {age}\n"
             f"Интересы: {interests}\n"
             f"Цель: {activity}\n"
