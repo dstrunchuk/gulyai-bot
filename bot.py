@@ -80,10 +80,9 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
     await query.message.reply_text(
         warning_text,
         parse_mode="Markdown",
-        reply_markup=ReplyKeyboardMarkup(
-            [[KeyboardButton("📝 Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]],
-            resize_keyboard=True
-        )
+        reply_markup=InlineKeyboardMarkup([
+    [InlineKeyboardButton("📝 Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
+])
     )
 
 
