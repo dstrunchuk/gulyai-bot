@@ -82,7 +82,7 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
         warning_text,
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
-    [InlineKeyboardButton("📝 Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
+    [InlineKeyboardButton("Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
 ])
     )
 
