@@ -3,7 +3,7 @@ import json
 import logging
 import requests
 from dotenv import load_dotenv
-from supabase import create_client
+from supabase import create_client, Client
 from telegram import (
     Update,
     InlineKeyboardButton,
