@@ -2,7 +2,6 @@ import os
 import json
 import logging
 import requests
-from dotenv import load_dotenv
 from supabase import create_client
 from telegram import (
     Update,
