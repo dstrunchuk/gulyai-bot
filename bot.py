@@ -19,14 +19,12 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = os.environ.get("TOKEN")
+TOKEN = os.getenv("TOKEN")
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 USERS_FILE = "users.json"
-BACKEND_API = "https://gulyai-backend-production.up.railway.app/api/text"
-ADMIN_ID = 987664835
+ADMIN_ID = 987664835  # только твой ID
 
 logging.basicConfig(level=logging.INFO)
-
 
 # Хранилище
 def load_users():
@@ -35,16 +33,17 @@ def load_users():
     with open(USERS_FILE, "r") as f:
         return json.load(f)
 
-
 def save_user(user_data):
     users = load_users()
-    users.append(user_data)
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=2)
+    existing = [u for u in users if u["chat_id"] == user_data["chat_id"]]
+    if not existing:
+        users.append(user_data)
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=2)
 
-
-# /start
+# Старт
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
     intro = (
         "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным.\n\n"
         "Тиндер, Bumble и другие — это про свидания, алгоритмы и бесконечные свайпы.\n\n"
@@ -55,16 +54,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "\n👣 Как работает Gulyai:\n\n"
         "1️⃣ Заполни анкету — укажи имя, адрес, интересы и т.д.\n"
         "2️⃣ Нажми “Гулять” — увидишь свою анкету.\n"
-        "3️⃣ Дополни анкету и жми гулять где увидишь список людей.\n"
+        "3️⃣ Дополни анкету и жми гулять, где увидишь список людей.\n"
     )
 
     buttons = [
         [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
     ]
 
-    # Админ-кнопка
-    if update.effective_user.id == ADMIN_ID:
-        buttons.append([InlineKeyboardButton("⚙️ Админка", callback_data="admin_panel")])
+    if user_id == ADMIN_ID:
+        buttons.append([InlineKeyboardButton("⚙️ Админка", callback_data="admin_menu")])
 
     await update.message.reply_text(
         intro + how_it_works,
@@ -72,29 +70,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(buttons)
     )
 
-
-# После "Далее"
+# Предупреждение
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    warning_text = (
-        "⚠️ *Внимание!*\n"
-        "Не встречайтесь в незнакомых вам улицах.\n"
-        "Гуляйте в более людных местах!\n"
-        "Первый запуск приложения может быть долгим"
-    )
-
-    await query.message.reply_text(
-        warning_text,
+    await update.callback_query.answer()
+    await update.callback_query.message.reply_text(
+        "⚠️ *Внимание!*\nНе встречайтесь в незнакомых улицах. Гуляйте в людных местах.\n\n"
+        "Первый запуск приложения может быть долгим",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
         ])
     )
 
-
-# /form
+# Повтор анкеты
 async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📝 Хочешь снова заполнить анкету? Нажми кнопку ниже:",
@@ -104,28 +92,21 @@ async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     )
 
-
-# Получение анкеты
+# Анкета из WebApp
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = json.loads(update.message.web_app_data.data)
+        data["chat_id"] = update.effective_user.id
         save_user(data)
-
-        name = data.get("name", "—")
-        address = data.get("address", "—")
-        age = data.get("age", "—")
-        interests = data.get("interests", "—")
-        activity = data.get("activity", "—")
-        vibe = data.get("vibe", "—")
 
         text = (
             f"📬 Анкета получена!\n\n"
-            f"Имя: {name}\n"
-            f"Адрес: {address}\n"
-            f"Возраст: {age}\n"
-            f"Интересы: {interests}\n"
-            f"Цель: {activity}\n"
-            f"Настроение: {vibe}"
+            f"Имя: {data.get('name', '—')}\n"
+            f"Адрес: {data.get('address', '—')}\n"
+            f"Возраст: {data.get('age', '—')}\n"
+            f"Интересы: {data.get('interests', '—')}\n"
+            f"Цель: {data.get('activity', '—')}\n"
+            f"Настроение: {data.get('vibe', '—')}"
         )
 
         await update.message.reply_text(
@@ -135,48 +116,67 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 resize_keyboard=True
             )
         )
-
     except Exception as e:
-        logging.error(f"❌ Ошибка обработки анкеты: {e}")
+        logging.error(f"❌ Ошибка анкеты: {e}")
         await update.message.reply_text("Произошла ошибка при обработке анкеты. Попробуй снова.")
 
-
 # Админка
-async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if query.from_user.id != ADMIN_ID:
-        await query.message.reply_text("⛔ Доступ запрещён.")
-        return
+    await query.message.reply_text(
+        "⚙️ Админка — выбери действие:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📨 Отправить сообщение всем", callback_data="broadcast")],
+            [InlineKeyboardButton("📊 Кол-во анкет", callback_data="count_users")],
+        ])
+    )
+
+# Броадкаст
+async def handle_broadcast_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data["broadcast_mode"] = True
 
     await query.message.reply_text(
-        "⚙️ Админ панель\n\nОтправь текст, который нужно разослать всем пользователям:",
+        "✍️ Напиши текст, который отправить всем пользователям.\n\n❌ Чтобы отменить — просто ничего не пиши."
     )
-    context.user_data["awaiting_broadcast"] = True
 
+async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get("broadcast_mode"):
+        context.user_data["broadcast_mode"] = False
+        message = update.message.text
+        users = load_users()
 
-# Обработка текста для рассылки
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.user_data.get("awaiting_broadcast") and update.effective_user.id == ADMIN_ID:
-        text = update.message.text
-        response = requests.post(BACKEND_API, json={"text": text})
+        success, failed = 0, 0
+        for u in users:
+            try:
+                await context.bot.send_message(chat_id=u["chat_id"], text=message)
+                success += 1
+            except:
+                failed += 1
 
-        if response.status_code == 200:
-            await update.message.reply_text("✅ Уведомление разослано!")
-        else:
-            await update.message.reply_text("❌ Ошибка отправки.")
-        context.user_data["awaiting_broadcast"] = False
+        await update.message.reply_text(
+            f"✅ Сообщение отправлено {success} пользователям.\n❌ Не удалось отправить: {failed}"
+        )
 
+# Подсчёт анкет
+async def handle_user_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    users = load_users()
+    await update.callback_query.answer()
+    await update.callback_query.message.reply_text(f"📊 Всего анкет: {len(users)}")
 
 # Запуск
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
-app.add_handler(CallbackQueryHandler(handle_admin_panel, pattern="^admin_panel$"))
+app.add_handler(CallbackQueryHandler(admin_menu, pattern="^admin_menu$"))
+app.add_handler(CallbackQueryHandler(handle_broadcast_request, pattern="^broadcast$"))
+app.add_handler(CallbackQueryHandler(handle_user_count, pattern="^count_users$"))
 app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+app.add_handler(MessageHandler(filters.TEXT & filters.USER(user_id=ADMIN_ID), handle_text_message))
 
-print("🤖 Gulyai бот с админкой запущен!")
+print("🤖 Gulyai бот запущен!")
 app.run_polling()
