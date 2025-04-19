@@ -176,7 +176,7 @@ app.add_handler(CallbackQueryHandler(handle_broadcast_request, pattern="^broadca
 app.add_handler(CallbackQueryHandler(handle_user_count, pattern="^count_users$"))
 app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
-app.add_handler(MessageHandler(filters.TEXT & filters.USER(user_id=ADMIN_ID), handle_text_message))
+app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 
 print("🤖 Gulyai бот запущен!")
 app.run_polling()
