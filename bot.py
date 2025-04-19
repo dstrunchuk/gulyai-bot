@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import requests
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -8,7 +9,6 @@ from telegram import (
     WebAppInfo,
     ReplyKeyboardMarkup,
     KeyboardButton,
-    InputFile,
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -22,16 +22,19 @@ from telegram.ext import (
 TOKEN = os.environ.get("TOKEN")
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 USERS_FILE = "users.json"
+BACKEND_API = "https://gulyai-backend-production.up.railway.app/api/text"
+ADMIN_ID = 987664835
 
 logging.basicConfig(level=logging.INFO)
 
 
-# 🧠 Хранилище
+# Хранилище
 def load_users():
     if not os.path.exists(USERS_FILE):
         return []
     with open(USERS_FILE, "r") as f:
         return json.load(f)
+
 
 def save_user(user_data):
     users = load_users()
@@ -40,7 +43,7 @@ def save_user(user_data):
         json.dump(users, f, indent=2)
 
 
-# 🚀 /start
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     intro = (
         "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным.\n\n"
@@ -53,20 +56,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "1️⃣ Заполни анкету — укажи имя, адрес, интересы и т.д.\n"
         "2️⃣ Нажми “Гулять” — увидишь свою анкету.\n"
         "3️⃣ Дополни анкету и жми гулять где увидишь список людей.\n"
-         
     )
+
+    buttons = [
+        [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
+    ]
+
+    # Админ-кнопка
+    if update.effective_user.id == ADMIN_ID:
+        buttons.append([InlineKeyboardButton("⚙️ Админка", callback_data="admin_panel")])
 
     await update.message.reply_text(
         intro + how_it_works,
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
-        ])
+        reply_markup=InlineKeyboardMarkup(buttons)
     )
 
 
-
-# ⚠️ После "Далее"
+# После "Далее"
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -82,12 +89,12 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
         warning_text,
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
-    [InlineKeyboardButton("Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
-])
+            [InlineKeyboardButton("Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ])
     )
 
 
-# 🔁 /form — показать кнопку снова
+# /form
 async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📝 Хочешь снова заполнить анкету? Нажми кнопку ниже:",
@@ -98,7 +105,7 @@ async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# 📥 Получение анкеты
+# Получение анкеты
 async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = json.loads(update.message.web_app_data.data)
@@ -110,7 +117,6 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         interests = data.get("interests", "—")
         activity = data.get("activity", "—")
         vibe = data.get("vibe", "—")
-        photo = data.get("photo", None)
 
         text = (
             f"📬 Анкета получена!\n\n"
@@ -135,12 +141,42 @@ async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Произошла ошибка при обработке анкеты. Попробуй снова.")
 
 
-# ▶️ Запуск
+# Админка
+async def handle_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.from_user.id != ADMIN_ID:
+        await query.message.reply_text("⛔ Доступ запрещён.")
+        return
+
+    await query.message.reply_text(
+        "⚙️ Админ панель\n\nОтправь текст, который нужно разослать всем пользователям:",
+    )
+    context.user_data["awaiting_broadcast"] = True
+
+
+# Обработка текста для рассылки
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get("awaiting_broadcast") and update.effective_user.id == ADMIN_ID:
+        text = update.message.text
+        response = requests.post(BACKEND_API, json={"text": text})
+
+        if response.status_code == 200:
+            await update.message.reply_text("✅ Уведомление разослано!")
+        else:
+            await update.message.reply_text("❌ Ошибка отправки.")
+        context.user_data["awaiting_broadcast"] = False
+
+
+# Запуск
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
+app.add_handler(CallbackQueryHandler(handle_admin_panel, pattern="^admin_panel$"))
 app.add_handler(CommandHandler("form", form))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-print("🤖 Gulyai бот готов к запуску!")
+print("🤖 Gulyai бот с админкой запущен!")
 app.run_polling()
