@@ -73,8 +73,9 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
 
     warning_text = (
         "⚠️ *Внимание!*\n"
-        "Не встречайтесь в незнакомых вам местах, улицах.\n"
-        "Гуляйте в более людных местах!"
+        "Не встречайтесь в незнакомых вам улицах.\n"
+        "Гуляйте в более людных местах!\n"
+        "Первый запуск приложения может быть долгим"
     )
 
     await query.message.reply_text(
