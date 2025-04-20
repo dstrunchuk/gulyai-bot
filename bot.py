@@ -194,10 +194,18 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
     from_id = data.split("_")[1]
 
     if data.startswith("agree_"):
-        await query.message.reply_text(
-            f"✅ Вы согласились! Вот ссылка: [t.me/{from_id}](https://t.me/{from_id})",
-            parse_mode="Markdown"
-        )
+        try:
+            initiator = await context.bot.get_chat(int(from_id))
+            await query.message.reply_text(
+                f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print("Ошибка при получении username инициатора:", e)
+            await query.message.reply_text(
+                f"✅ Вы согласились! Вот ссылка: [Профиль](https://t.me/user?id={from_id})",
+                parse_mode="Markdown"
+            )
         try:
             await context.bot.send_message(
                 chat_id=from_id,
