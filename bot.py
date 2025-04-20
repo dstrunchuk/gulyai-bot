@@ -164,24 +164,25 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
     if query.data == "confirm_broadcast":
         text = context.user_data.get("pending_text", "")
         try:
-            response = await db.from_("users").select("chat_id").execute()
-            count = len(response.data)
-            for user in users.data:
+            result = await db.from_("users").select("chat_id").execute()
+            users = result.data
+            count = 0
+            for user in users:
                 chat_id = user["chat_id"]
                 try:
                     await context.bot.send_message(chat_id=chat_id, text=text)
                     count += 1
-                except:
+                except Exception as e:
+                    print(f"❌ Не удалось отправить сообщение {chat_id}: {e}")
                     continue
             await query.message.reply_text(f"✅ Рассылка отправлена {count} пользователям.")
         except Exception as e:
-            await query.message.reply_text(f"Ошибка: {e}")
+            await query.message.reply_text(f"Ошибка при рассылке: {e}")
         finally:
             context.user_data["pending_text"] = None
 
     elif query.data == "cancel_broadcast":
         context.user_data["pending_text"] = None
-        context.user_data["awaiting_broadcast"] = False
         await query.message.reply_text("❌ Рассылка отменена.")
 
 # Инициализация
