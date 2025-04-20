@@ -26,7 +26,7 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
-WEBAPP_URL = "https://gulyai-webapp.vercel.app/#/"
+WEBAPP_URL = "https://gulyai-webapp.vercel.app/"
 ADMIN_ID = 987664835
 
 db = PostgrestClient(f"{SUPABASE_URL}/rest/v1")
