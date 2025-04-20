@@ -1,9 +1,7 @@
-
 import os
 import json
 import logging
 import requests
-from dotenv import load_dotenv
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -15,56 +13,57 @@ from telegram import (
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
-    ContextTypes,
     CallbackQueryHandler,
     MessageHandler,
+    ContextTypes,
     filters,
 )
+from postgrest import PostgrestClient
+from dotenv import load_dotenv
 
-# Загрузка переменных окружения
 load_dotenv()
+
 TOKEN = os.getenv("TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "987664835"))
-WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+WEBAPP_URL = "https://gulyai-webapp.vercel.app"
+ADMIN_ID = 987664835
+
+db = PostgrestClient(f"{SUPABASE_URL}/rest/v1")
+db.session.headers["apikey"] = SUPABASE_KEY
+db.session.headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
 
 logging.basicConfig(level=logging.INFO)
 
 # /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     intro = (
-        "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным."
-        "Тиндер, Bumble и другие — это про свидания, алгоритмы и бесконечные свайпы."
-        "А что, если тебе просто хочется *погулять*, *выдохнуть*, *поболтать с кем-то*, кто рядом?"
+        "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным.\n\n"
+        "А что, если тебе просто хочется *погулять*, *выдохнуть*, *поболтать с кем-то*, кто рядом?\n"
     )
-    how_it_works = (
-        "\n👣 Как работает Gulyai:\n\n"
-        "1️⃣ Заполни анкету — укажи имя, адрес, интересы и т.д.\n"
-        "2️⃣ Нажми “Гулять” — увидишь свою анкету.\n"
-        "3️⃣ Дополни анкету и жми гулять где увидишь список людей.\n"
-    )
+
     await update.message.reply_text(
-        intro + how_it_works,
+        intro,
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
         ])
     )
 
-# ⚠️ После "Далее"
+# Предупреждение
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     await query.message.reply_text(
-        "⚠️ *Внимание!*\nНе встречайтесь в незнакомых местах. Первый запуск может быть долгим.",
+        "⚠️ Не встречайтесь в тёмных переулках. Лучше гулять в людных местах!",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Гулять", web_app=WebAppInfo(url=WEBAPP_URL))]
         ])
     )
 
-# /form — команда
+# /form
 async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📝 Хочешь снова заполнить анкету?",
@@ -74,77 +73,104 @@ async def form(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     )
 
-# /admin — только для тебя
-async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Обработка анкеты
+async def handle_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        data = json.loads(update.message.web_app_data.data)
+        name = data.get("name", "—")
+        address = data.get("address", "—")
+
+        text = (
+            f"📬 Анкета получена!\n\n"
+            f"Имя: {name}\n"
+            f"Адрес: {address}"
+        )
+
+        await update.message.reply_text(text)
+    except Exception as e:
+        logging.error(f"❌ Ошибка анкеты: {e}")
+        await update.message.reply_text("Ошибка при обработке анкеты.")
+
+# Админка
+async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
+
     await update.message.reply_text(
         "⚙️ Админка:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("📢 Отправить уведомление", callback_data="broadcast")],
-            [InlineKeyboardButton("👥 Кол-во анкет", callback_data="count_users")]
+            [InlineKeyboardButton("📨 Рассылка", callback_data="admin_broadcast")],
+            [InlineKeyboardButton("📊 Кол-во анкет", callback_data="admin_count")]
         ])
     )
 
-# Обработка нажатий
-async def handle_admin_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Обработка админ-кнопок
+async def handle_admin_actions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if update.effective_user.id != ADMIN_ID:
-        return
 
-    if query.data == "count_users":
-        res = requests.get(
-            f"{SUPABASE_URL}/rest/v1/users?select=chat_id",
-            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
-        )
-        count = len(res.json()) if res.ok else "?"
-        await query.message.reply_text(f"👥 Всего анкет: {count}")
-
-    if query.data == "broadcast":
+    if query.data == "admin_broadcast":
         context.user_data["awaiting_broadcast"] = True
-        await query.message.reply_text("✍️ Введи текст для рассылки или /cancel")
+        await query.message.reply_text("✍️ Напиши текст рассылки. Отправка будет только после подтверждения.")
+    elif query.data == "admin_count":
+        try:
+            users = db.from_("users").select("chat_id").execute()
+            count = len(users.data)
+            await query.message.reply_text(f"📊 В базе сейчас {count} анкет.")
+        except Exception as e:
+            await query.message.reply_text(f"Ошибка при получении анкет: {e}")
 
-# Текст от админа
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        return
-    if context.user_data.get("awaiting_broadcast"):
-        text = update.message.text
-        await update.message.reply_text("✅ Рассылаем...")
+# Подтверждение рассылки
+async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get("awaiting_broadcast") and update.effective_user.id == ADMIN_ID:
+        context.user_data["awaiting_broadcast"] = False
+        context.user_data["pending_text"] = update.message.text
 
-        res = requests.get(
-            f"{SUPABASE_URL}/rest/v1/users?select=chat_id",
-            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        await update.message.reply_text(
+            f"🔒 Подтверди отправку:\n\n{update.message.text}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Отправить", callback_data="confirm_broadcast")],
+                [InlineKeyboardButton("❌ Отмена", callback_data="cancel_broadcast")]
+            ])
         )
-        if not res.ok:
-            await update.message.reply_text("❌ Не удалось получить список.")
-            return
 
-        for user in res.json():
-            try:
-                await context.bot.send_message(chat_id=user["chat_id"], text=text)
-            except Exception:
-                continue
+# Подтверждение / отмена
+async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
-        await update.message.reply_text("✅ Уведомление отправлено.")
-        context.user_data["awaiting_broadcast"] = False
+    if query.data == "confirm_broadcast":
+        text = context.user_data.get("pending_text", "")
+        try:
+            users = db.from_("users").select("chat_id").execute()
+            count = 0
+            for user in users.data:
+                chat_id = user["chat_id"]
+                try:
+                    await context.bot.send_message(chat_id=chat_id, text=text)
+                    count += 1
+                except:
+                    continue
+            await query.message.reply_text(f"✅ Рассылка отправлена {count} пользователям.")
+        except Exception as e:
+            await query.message.reply_text(f"Ошибка: {e}")
+        finally:
+            context.user_data["pending_text"] = None
 
-# /cancel
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID:
-        context.user_data["awaiting_broadcast"] = False
-        await update.message.reply_text("❌ Отменено.")
+    elif query.data == "cancel_broadcast":
+        context.user_data["pending_text"] = None
+        await query.message.reply_text("❌ Рассылка отменена.")
 
-# Запуск
+# Инициализация
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("form", form))
-app.add_handler(CommandHandler("admin", admin))
-app.add_handler(CommandHandler("cancel", cancel))
+app.add_handler(CommandHandler("admin", admin_panel))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
-app.add_handler(CallbackQueryHandler(handle_admin_action, pattern="^(broadcast|count_users)$"))
-app.add_handler(MessageHandler(filters.TEXT, handle_text))
+app.add_handler(CallbackQueryHandler(handle_admin_actions, pattern="^admin_"))
+app.add_handler(CallbackQueryHandler(handle_confirmation, pattern="^(confirm|cancel)_broadcast$"))
+app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
+app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 
-print("🤖 Gulyai-бот запущен!")
+print("🤖 Бот запущен!")
 app.run_polling()
