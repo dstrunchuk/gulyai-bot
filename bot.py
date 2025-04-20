@@ -195,25 +195,18 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if data.startswith("agree_"):
         initiator = await context.bot.get_chat(from_id)
+        initiator_username = initiator.username
+        initiator_id = initiator.id 
         if initiator.username:
             text = f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
             parse_mode="Markdown"
         
         try:
-            responder = query.from_user  # Тот, кто нажал "Согласен"
-            username = responder.username
-            user_id = responder.id
-
-            link = f"https://t.me/{username}" if username else f"https://t.me/user?id={user_id}"
-            
             await context.bot.send_message(
                 chat_id=from_id,
-                text=(
-                    f"✅ {responder.first_name} тоже хочет встретиться с тобой!\n"
-                    f"[Открыть профиль]({link})",
-                ),
+                text=f"✅ {query.from_user.first_name} тоже хочет встретиться с тобой!\n[Открыть профиль](https://t.me/{query.from_user.username})",
                 parse_mode="Markdown"
-            ),
+            )
         except Exception as e:
             print("Ошибка при уведомлении отправителя:", e)
 
