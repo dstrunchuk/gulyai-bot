@@ -26,7 +26,7 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
-WEBAPP_URL = "https://gulyai-webapp.vercel.app"
+WEBAPP_URL = "https://gulyai-webapp.vercel.app/#/"
 ADMIN_ID = 987664835
 
 db = PostgrestClient(f"{SUPABASE_URL}/rest/v1")
@@ -209,7 +209,7 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
 
     elif data.startswith("decline_"):
         await query.message.reply_text("❌ Вы отклонили предложение.")
-        
+
 # Инициализация
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
