@@ -194,14 +194,47 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
     from_id = data.split("_")[1]
 
     if data.startswith("agree_"):
+        from_user = query.from_user  # Тот, кто нажал "Согласен"
+        from_username = from_user.username
+        from_id = from_user.id
+
+    # Получаем данные инициатора предложения
+        initiator_id = int(data.split("_")[1])
+        try:
+            initiator = await context.bot.get_chat(initiator_id)
+        except Exception as e:
+            print("Ошибка при получении данных инициатора:", e)
+            await query.message.reply_text("Произошла ошибка при получении профиля.")
+            return
+
+    # Ссылка на инициатора
+        if initiator.username:
+            initiator_link = f"https://t.me/{initiator.username}"
+            initiator_display = f"@{initiator.username}"
+        else:
+            initiator_link = f"https://t.me/user?id={initiator.id}"
+            initiator_display = f"пользователь с ID {initiator.id}"
+
         await query.message.reply_text(
-            f"✅ Вы согласились! Вот ссылка: [t.me/{from_id}](https://t.me/{from_id})",
+            f"✅ Вы согласились! Вот ссылка: [{initiator_display}]({initiator_link})",
             parse_mode="Markdown"
         )
+
+    # Ссылка на отвечающего
+        if from_username:
+            responder_link = f"https://t.me/{from_username}"
+            responder_display = f"@{from_username}"
+        else:
+            responder_link = f"https://t.me/user?id={from_id}"
+            responder_display = f"пользователь с ID {from_id}"
+
         try:
             await context.bot.send_message(
-                chat_id=from_id,
-                text=f"✅ {query.from_user.first_name} тоже хочет встретиться с тобой!\n[Открыть профиль](https://t.me/{query.from_user.username})",
+                chat_id=initiator.id,
+                text=(
+                    f"✅ {from_user.first_name} тоже хочет встретиться с тобой!\n"
+                    f"[Открыть профиль]({responder_link})"
+                ),
                 parse_mode="Markdown"
             )
         except Exception as e:
