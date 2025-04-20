@@ -194,32 +194,19 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
     from_id = data.split("_")[1]
 
     if data.startswith("agree_"):
-        initiator_id = int(data.split("_")[1])  # A — инициатор
-        responder = query.from_user             # B — кто сейчас нажал "Согласен"
-
+        initiator = await context.bot.get_chat(from_id)
+        if initiator.username:
+            link_text = f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
+            parse_mode="Markdown"
+        
         try:
-            initiator = await context.bot.get_chat(initiator_id)
+            await context.bot.send_message(
+                chat_id=from_id,
+                text=f"✅ {query.from_user.first_name} тоже хочет встретиться с тобой!\n[Открыть профиль](https://t.me/{query.from_user.username})",
+                parse_mode="Markdown"
+            )
         except Exception as e:
-            print("Ошибка при получении инициатора:", e)
-            await query.message.reply_text("Ошибка при получении профиля.")
-            return
-
-    # Ссылка инициатору (A)
-        await context.bot.send_message(
-            chat_id=initiator_id,
-            text=(
-                f"✅ {responder.first_name} тоже хочет встретиться с тобой!\n"
-                f"[Открыть профиль](https://t.me/{responder.username})"
-            ),
-            parse_mode="Markdown"
-        )
-
-    # Ответ для соглашающегося (B)
-        await query.message.reply_text(
-            f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
-            parse_mode="Markdown"
-        )
-
+            print("Ошибка при уведомлении отправителя:", e)
 
     elif data.startswith("decline_"):
         await query.message.reply_text("❌ Вы отклонили предложение.")
