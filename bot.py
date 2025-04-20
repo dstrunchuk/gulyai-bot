@@ -37,6 +37,13 @@ logging.basicConfig(level=logging.INFO)
 
 # /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    # Только первый вызов стартуем
+    if context.chat_data.get("start_done"):
+        return
+    context.chat_data["start_done"] = True
+    
     intro = (
         "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным.\n\n"
         "Тиндер, Bumble и другие — это про свидания, алгоритмы и бесконечные свайпы.\n\n"
