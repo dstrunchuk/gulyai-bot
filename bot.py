@@ -114,7 +114,7 @@ async def handle_admin_actions(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.message.reply_text("✍️ Напиши текст рассылки. Отправка будет только после подтверждения.")
     elif query.data == "admin_count":
         try:
-            users = db.from_("users").select("chat_id").execute()
+            users = await db.from_("users").select("chat_id").execute()
             count = len(users.data)
             await query.message.reply_text(f"📊 В базе сейчас {count} анкет.")
         except Exception as e:
