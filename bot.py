@@ -43,7 +43,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.chat_data.get("start_done"):
         return
     context.chat_data["start_done"] = True
-    
+
     intro = (
         "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным.\n\n"
         "Тиндер, Bumble и другие — это про свидания, алгоритмы и бесконечные свайпы.\n\n"
@@ -164,8 +164,8 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
     if query.data == "confirm_broadcast":
         text = context.user_data.get("pending_text", "")
         try:
-            users = db.from_("users").select("chat_id").execute()
-            count = 0
+            response = await db.from_("users").select("chat_id").execute()
+            count = len(response.data)
             for user in users.data:
                 chat_id = user["chat_id"]
                 try:
