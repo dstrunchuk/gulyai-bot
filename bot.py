@@ -196,7 +196,7 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
     if data.startswith("agree_"):
         initiator = await context.bot.get_chat(from_id)
         if initiator.username:
-            link_text = f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
+            text = f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
             parse_mode="Markdown"
         
         try:
