@@ -186,6 +186,30 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
         context.user_data["pending_text"] = None
         await query.message.reply_text("❌ Рассылка отменена.")
 
+async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    data = query.data
+    from_id = data.split("_")[1]
+
+    if data.startswith("agree_"):
+        await query.message.reply_text(
+            f"✅ Вы согласились! Вот ссылка: [t.me/{from_id}](https://t.me/{from_id})",
+            parse_mode="Markdown"
+        )
+        try:
+            await context.bot.send_message(
+                chat_id=from_id,
+                text=f"✅ {query.from_user.first_name} тоже хочет встретиться с тобой!\n[Открыть профиль](https://t.me/{query.from_user.username})",
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print("Ошибка при уведомлении отправителя:", e)
+
+    elif data.startswith("decline_"):
+        await query.message.reply_text("❌ Вы отклонили предложение.")
+        
 # Инициализация
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
@@ -194,6 +218,7 @@ app.add_handler(CommandHandler("admin", admin_panel))
 app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
 app.add_handler(CallbackQueryHandler(handle_admin_actions, pattern="^admin_"))
 app.add_handler(CallbackQueryHandler(handle_confirmation, pattern="^(confirm|cancel)_broadcast$"))
+app.add_handler(CallbackQueryHandler(handle_meet_response, pattern="^(agree_|decline_)"))
 app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 
