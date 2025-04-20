@@ -18,7 +18,6 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from postgrest import PostgrestClient
 from dotenv import load_dotenv
 
 load_dotenv()
