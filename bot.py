@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import requests
+from postgrest import PostgrestClient
 from telegram import (
     Update,
     InlineKeyboardButton,

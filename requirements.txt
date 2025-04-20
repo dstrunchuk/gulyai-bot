@@ -1,6 +1,6 @@
-python-telegram-bot==20.3
+python-telegram-bot==20.0
 requests==2.31.0
 python-dotenv==1.0.1
-httpx==0.24.1
 cloudinary==1.36.0
-supabase-py==0.2.5
+httpx[http2]==0.23.1
+supabase==2.15.0
