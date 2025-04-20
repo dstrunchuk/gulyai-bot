@@ -194,51 +194,32 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
     from_id = data.split("_")[1]
 
     if data.startswith("agree_"):
-        from_user = query.from_user  # Тот, кто нажал "Согласен"
-        from_username = from_user.username
-        from_id = from_user.id
+        initiator_id = int(data.split("_")[1])  # A — инициатор
+        responder = query.from_user             # B — кто сейчас нажал "Согласен"
 
-    # Получаем данные инициатора предложения
-        initiator_id = int(data.split("_")[1])
         try:
             initiator = await context.bot.get_chat(initiator_id)
         except Exception as e:
-            print("Ошибка при получении данных инициатора:", e)
-            await query.message.reply_text("Произошла ошибка при получении профиля.")
+            print("Ошибка при получении инициатора:", e)
+            await query.message.reply_text("Ошибка при получении профиля.")
             return
 
-    # Ссылка на инициатора
-        if initiator.username:
-            initiator_link = f"https://t.me/{initiator.username}"
-            initiator_display = f"@{initiator.username}"
-        else:
-            initiator_link = f"https://t.me/user?id={initiator.id}"
-            initiator_display = f"пользователь с ID {initiator.id}"
-
-        await query.message.reply_text(
-            f"✅ Вы согласились! Вот ссылка: [{initiator_display}]({initiator_link})",
+    # Ссылка инициатору (A)
+        await context.bot.send_message(
+            chat_id=initiator_id,
+            text=(
+                f"✅ {responder.first_name} тоже хочет встретиться с тобой!\n"
+                f"[Открыть профиль](https://t.me/{responder.username})"
+            ),
             parse_mode="Markdown"
         )
 
-    # Ссылка на отвечающего
-        if from_username:
-            responder_link = f"https://t.me/{from_username}"
-            responder_display = f"@{from_username}"
-        else:
-            responder_link = f"https://t.me/user?id={from_id}"
-            responder_display = f"пользователь с ID {from_id}"
+    # Ответ для соглашающегося (B)
+        await query.message.reply_text(
+            f"✅ Вы согласились! Вот ссылка: [@{initiator.username}](https://t.me/{initiator.username})",
+            parse_mode="Markdown"
+        )
 
-        try:
-            await context.bot.send_message(
-                chat_id=initiator.id,
-                text=(
-                    f"✅ {from_user.first_name} тоже хочет встретиться с тобой!\n"
-                    f"[Открыть профиль]({responder_link})"
-                ),
-                parse_mode="Markdown"
-            )
-        except Exception as e:
-            print("Ошибка при уведомлении отправителя:", e)
 
     elif data.startswith("decline_"):
         await query.message.reply_text("❌ Вы отклонили предложение.")
