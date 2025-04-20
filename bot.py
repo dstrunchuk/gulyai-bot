@@ -22,6 +22,10 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 
+if os.getenv("RUN_ENV") != "production":
+    print("Бот работает только на Railway. Запуск остановлен.")
+    exit()
+
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
