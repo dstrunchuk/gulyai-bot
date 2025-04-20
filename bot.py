@@ -110,9 +110,15 @@ async def handle_admin_actions(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     if query.data == "admin_broadcast":
-        context.user_data["awaiting_broadcast"] = True
-        await query.message.reply_text("✍️ Напиши текст рассылки. Отправка будет только после подтверждения.")
-    elif query.data == "admin_count":
+    context.user_data["awaiting_broadcast"] = True
+    context.user_data["pending_text"] = None
+
+    await query.message.reply_text(
+        "✍️ Напиши текст рассылки.\n\nЕсли передумал — нажми «Отмена»:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("❌ Отмена", callback_data="cancel_broadcast")]
+        ])
+    )
         try:
             users = await db.from_("users").select("chat_id").execute()
             count = len(users.data)
@@ -158,8 +164,9 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
             context.user_data["pending_text"] = None
 
     elif query.data == "cancel_broadcast":
-        context.user_data["pending_text"] = None
-        await query.message.reply_text("❌ Рассылка отменена.")
+    context.user_data["pending_text"] = None
+    context.user_data["awaiting_broadcast"] = False
+    await query.message.reply_text("❌ Рассылка отменена.")
 
 # Инициализация
 app = ApplicationBuilder().token(TOKEN).build()
