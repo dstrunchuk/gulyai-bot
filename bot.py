@@ -69,6 +69,7 @@ async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_
 
     await query.message.reply_text(
     "⚠️ Внимание!\n\n"
+    "Не выключайте уведомления!\n\n"
     "Не встречайтесь на незнакомых улицах!\n"
     "Гуляйте в более людных местах.",
     parse_mode="Markdown",
