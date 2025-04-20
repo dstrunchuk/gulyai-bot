@@ -219,7 +219,7 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.message.reply_text("❌ Вы отклонили предложение.")
         try:
             httpx.post(
-                "https://gulyai-backend-production.up.railway.app",
+                "https://gulyai-backend-production.up.railway.app/api/set-offline",
                 json={"chat_id": query.from_user.id}
             )
         except Exception as e:
