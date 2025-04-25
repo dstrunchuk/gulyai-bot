@@ -222,6 +222,9 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
 
     elif data.startswith("decline_"):
         await query.message.reply_text("❌ Вы отклонили предложение.")
+        await query.message.reply_text(
+            "ℹ️ После отказа ты больше не отображаешься среди активных пользователей. Чтобы снова появиться в списке, нажми «Гулять» в приложении."
+        )
         
         # --> Уведомляем инициатора об отказе
         try:
