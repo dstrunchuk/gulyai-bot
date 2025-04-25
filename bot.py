@@ -222,8 +222,19 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
 
     elif data.startswith("decline_"):
         await query.message.reply_text("❌ Вы отклонили предложение.")
+        
+        # --> Уведомляем инициатора об отказе
         try:
-            httpx.post(
+            await context.bot.send_message(
+                chat_id=from_id,
+                text="❌ Ваше предложение о встрече было отклонено."
+            )
+        except Exception as e:
+            print(f"Ошибка при уведомлении об отказе: {e}")
+        
+        # --> Статус переводим в offline
+        try:
+            await httpx.post(
                 "https://gulyai-backend-production.up.railway.app/api/set-offline",
                 json={"chat_id": query.from_user.id}
             )
