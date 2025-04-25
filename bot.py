@@ -22,6 +22,7 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+import asyncio
 
 load_dotenv()
 
@@ -176,14 +177,22 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
             result = await db.from_("users").select("chat_id").execute()
             users = result.data
             count = 0
-            for user in users:
-                chat_id = user["chat_id"]
+
+            async def send_message(chat_id):
+                nonlocal count
                 try:
                     await context.bot.send_message(chat_id=chat_id, text=text)
                     count += 1
                 except Exception as e:
                     print(f"❌ Не удалось отправить сообщение {chat_id}: {e}")
-                    continue
+
+            tasks = [send_message(user["chat_id"]) for user in users]
+            
+            # Ограничим до 30 сообщений в секунду
+            for i in range(0, len(tasks), 30):
+                await asyncio.gather(*tasks[i:i+30])
+                await asyncio.sleep(1)
+
             await query.message.reply_text(f"✅ Рассылка отправлена {count} пользователям.")
         except Exception as e:
             await query.message.reply_text(f"Ошибка при рассылке: {e}")
