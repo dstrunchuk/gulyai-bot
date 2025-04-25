@@ -217,6 +217,13 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
                 text=f"✅ {query.from_user.first_name} тоже хочет встретиться с тобой!\n[Открыть профиль](https://t.me/{query.from_user.username})",
                 parse_mode="Markdown"
             )
+
+            ADMIN_ID = 987664835  # замени на свой ID
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"👥 {query.from_user.first_name} и пользователь {from_id} согласились встретиться!"
+            )
+
         except Exception as e:
             print("Ошибка при уведомлении отправителя:", e)
 
