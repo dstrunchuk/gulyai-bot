@@ -21,6 +21,7 @@ from telegram.ext import (
     filters,
 )
 from dotenv import load_dotenv
+from fastapi import BackgroundTasks
 from fastapi import FastAPI, Request
 import asyncio
 
@@ -281,11 +282,15 @@ print("🤖 Бот запущен!")
 # FastAPI сервер
 fastapi_app = FastAPI()
 
-@fastapi_app.post(f"/webhook/{TOKEN}")
-async def webhook_handler(request: Request):
+@app.post(f"/webhook/{TOKEN}")
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
     data = await request.json()
     update = Update.de_json(data, bot_app.bot)
-    await bot_app.process_update(update)
+    
+    # Обработку запускаем в фоне
+    background_tasks.add_task(bot_app.process_update, update)
+    
+    # Сразу отвечаем Telegram, чтобы он не ждал
     return {"ok": True}
 
 @fastapi_app.on_event("startup")
