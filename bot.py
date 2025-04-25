@@ -264,23 +264,32 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
             print(f"Ошибка при обновлении статуса через backend: {e}")
         
 # Инициализация
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("form", form))
-app.add_handler(CommandHandler("admin", admin_panel))
-app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
-app.add_handler(CallbackQueryHandler(handle_admin_actions, pattern="^admin_"))
-app.add_handler(CallbackQueryHandler(handle_confirmation, pattern="^(confirm|cancel)_broadcast$"))
-app.add_handler(CallbackQueryHandler(handle_meet_response, pattern="^(agree_|decline_)"))
-app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
-app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
+# Заменяем всё, что после добавления всех handlers:
+
+bot_app = ApplicationBuilder().token(TOKEN).build()
+bot_app.add_handler(CommandHandler("start", start))
+bot_app.add_handler(CommandHandler("form", form))
+bot_app.add_handler(CommandHandler("admin", admin_panel))
+bot_app.add_handler(CallbackQueryHandler(handle_continue_warning, pattern="^continue_warning$"))
+bot_app.add_handler(CallbackQueryHandler(handle_admin_actions, pattern="^admin_"))
+bot_app.add_handler(CallbackQueryHandler(handle_confirmation, pattern="^(confirm|cancel)_broadcast$"))
+bot_app.add_handler(CallbackQueryHandler(handle_meet_response, pattern="^(agree_|decline_)"))
+bot_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
+bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 
 print("🤖 Бот запущен!")
-fastapi_app = FastAPI()
 
-@fastapi_app.post(f"/webhook/{TOKEN}")
+# FastAPI сервер
+app = FastAPI()
+
+@app.post(f"/webhook/{TOKEN}")
 async def webhook_handler(request: Request):
     data = await request.json()
-    update = Update.de_json(data, app.bot)
-    await app.process_update(update)
+    update = Update.de_json(data, bot_app.bot)
+    await bot_app.process_update(update)
     return {"ok": True}
+
+@app.on_event("startup")
+async def startup_event():
+    await bot_app.initialize()
+    await bot_app.start()
