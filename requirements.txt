@@ -4,3 +4,5 @@ python-dotenv==1.0.1
 httpx==0.23.1
 cloudinary==1.36.0
 postgrest-py==0.10.6
+fastapi
+uvicorn
