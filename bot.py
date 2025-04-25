@@ -3,7 +3,7 @@ import json
 import logging
 import requests
 import httpx
-from postgrest import PostgrestClient
+from postgrest import create_client
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -34,9 +34,7 @@ SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 WEBAPP_URL = "https://gulyai-webapp.vercel.app"
 ADMIN_ID = 987664835
 
-db = PostgrestClient(f"{SUPABASE_URL}/rest/v1")
-db.session.headers["apikey"] = SUPABASE_KEY
-db.session.headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
+db = create_client(f"{SUPABASE_URL}/rest/v1", SUPABASE_KEY)
 
 logging.basicConfig(level=logging.INFO)
 
