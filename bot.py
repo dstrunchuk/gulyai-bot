@@ -288,7 +288,7 @@ async def webhook_handler(request: Request):
     await bot_app.process_update(update)
     return {"ok": True}
 
-@app.on_event("startup")
+@fastapi_app.on_event("startup")
 async def startup_event():
     await bot_app.initialize()
     await bot_app.start()
