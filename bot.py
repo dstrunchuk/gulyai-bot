@@ -23,12 +23,13 @@ from telegram.ext import (
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 
+load_dotenv()
+
 if os.getenv("RUN_ENV") != "production":
     print("Бот работает только на Railway. Запуск остановлен.")
     exit()
 
-fastapi_app = FastAPI()
-load_dotenv()
+
 
 TOKEN = os.getenv("TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -266,6 +267,8 @@ app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp)
 app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 
 print("🤖 Бот запущен!")
+fastapi_app = FastAPI()
+
 @fastapi_app.post(f"/webhook/{TOKEN}")
 async def webhook_handler(request: Request):
     data = await request.json()
