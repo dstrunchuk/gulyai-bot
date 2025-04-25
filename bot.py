@@ -26,12 +26,6 @@ import asyncio
 
 load_dotenv()
 
-if os.getenv("RUN_ENV") != "production":
-    print("Бот работает только на Railway. Запуск остановлен.")
-    exit()
-
-
-
 TOKEN = os.getenv("TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
@@ -43,6 +37,10 @@ db.session.headers["apikey"] = SUPABASE_KEY
 db.session.headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
 
 logging.basicConfig(level=logging.INFO)
+
+if os.getenv("RUN_ENV") != "production":
+    print("Бот работает только на Railway. Запуск остановлен.")
+    exit()
 
 # /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -264,6 +262,7 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
             print(f"Ошибка при обновлении статуса через backend: {e}")
         
 # Инициализация
+bot_app = ApplicationBuilder().token(TOKEN).build()
 # Заменяем всё, что после добавления всех handlers:
 
 bot_app = ApplicationBuilder().token(TOKEN).build()
