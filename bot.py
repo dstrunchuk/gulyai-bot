@@ -48,9 +48,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     # Только первый вызов стартуем
-    if context.chat_data.get("start_done"):
-        return
-    context.chat_data["start_done"] = True
 
     intro = (
         "💬 Сегодня сложно познакомиться с кем-то по-настоящему живым и неподдельным.\n\n"
@@ -265,7 +262,7 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
             )
         except Exception as e:
             print(f"Ошибка при обновлении статуса через backend: {e}")
-            
+
 async def handle_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🔄 Обновлено! Нажми ➡️ Далее, чтобы продолжить.",
