@@ -45,6 +45,7 @@ if os.getenv("RUN_ENV") != "production":
 
 # /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("✅ Обработка команды /start началась")  # <--- ДОБАВЬ ЭТО
     user_id = update.effective_user.id
 
     # Только первый вызов стартуем
@@ -69,6 +70,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
         ])
     )
+    print("✅ Сообщение /start отправлено")  # <--- И ЭТО
 
 # Предупреждение
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
