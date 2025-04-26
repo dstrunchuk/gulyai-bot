@@ -280,7 +280,7 @@ bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle
 print("🤖 Бот запущен!")
 
 # FastAPI сервер
-fastapi_app = FastAPI()
+app = FastAPI()
 
 @app.post(f"/webhook/{TOKEN}")
 async def webhook_handler(request: Request):
