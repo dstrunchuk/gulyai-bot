@@ -293,3 +293,15 @@ async def webhook_handler(request: Request):
 async def startup_event():
     await bot_app.initialize()
     await bot_app.start()
+
+@app.post(f"/webhook/{TOKEN}")
+async def webhook_handler(request: Request):
+    try:
+        data = await request.json()
+        update = Update.de_json(data, bot_app.bot)
+        asyncio.create_task(bot_app.process_update(update))
+        print(f"✅ Получено обновление: {data}")
+        return {"ok": True}
+    except Exception as e:
+        print(f"❌ Ошибка в обработке webhook: {e}")
+        return {"ok": False, "error": str(e)}
