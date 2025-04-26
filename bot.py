@@ -282,18 +282,6 @@ print("🤖 Бот запущен!")
 # FastAPI сервер
 fastapi_app = FastAPI()
 
-@fastapi_app.post(f"/webhook/{TOKEN}")
-async def webhook_handler(request: Request):
-    data = await request.json()
-    update = Update.de_json(data, bot_app.bot)
-    await bot_app.process_update(update)
-    return {"ok": True}
-
-@fastapi_app.on_event("startup")
-async def startup_event():
-    await bot_app.initialize()
-    await bot_app.start()
-
 @app.post(f"/webhook/{TOKEN}")
 async def webhook_handler(request: Request):
     try:
@@ -305,3 +293,9 @@ async def webhook_handler(request: Request):
     except Exception as e:
         print(f"❌ Ошибка в обработке webhook: {e}")
         return {"ok": False, "error": str(e)}
+
+# Стартап-событие
+@app.on_event("startup")
+async def startup_event():
+    await bot_app.initialize()
+    await bot_app.start()
