@@ -292,11 +292,11 @@ async def webhook_handler(request: Request):
     try:
         data = await request.json()
         update = Update.de_json(data, bot_app.bot)
-        await bot_app.process_update(update)
-        print(f"✅ Обновление обработано: {data}")
-        return {"ok": True}
+        asyncio.create_task(bot_app.process_update(update))  # запускаем в фоне
+        print(f"✅ Принято обновление: {data}")
+        return {"ok": True}  # сразу ответить Telegram
     except Exception as e:
-        print(f"❌ Ошибка в обработке webhook: {e}")
+        print(f"❌ Ошибка обработки webhook: {e}")
         return {"ok": False, "error": str(e)}
 
 # Чтобы Railway нашёл приложение
