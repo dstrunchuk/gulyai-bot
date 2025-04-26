@@ -299,3 +299,5 @@ async def webhook_handler(request: Request):
 async def startup_event():
     await bot_app.initialize()
     await bot_app.start()
+
+fastapi_app = app    
