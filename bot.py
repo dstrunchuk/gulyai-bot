@@ -72,14 +72,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             resize_keyboard=True
         )
-    )
-async def handle_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🔄 Обновлено! Нажми ➡️ Далее, чтобы продолжить.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
-        ])
-    )    
+    )  
 
 # Предупреждение
 async def handle_continue_warning(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -272,6 +265,14 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
             )
         except Exception as e:
             print(f"Ошибка при обновлении статуса через backend: {e}")
+            
+async def handle_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🔄 Обновлено! Нажми ➡️ Далее, чтобы продолжить.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("➡️ Далее", callback_data="continue_warning")]
+        ])
+    )  
         
 # Инициализация
 bot_app = ApplicationBuilder().token(TOKEN).build()
@@ -287,7 +288,7 @@ bot_app.add_handler(CallbackQueryHandler(handle_confirmation, pattern="^(confirm
 bot_app.add_handler(CallbackQueryHandler(handle_meet_response, pattern="^(agree_|decline_)"))
 bot_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🔄 Обновить экран"), handle_refresh))
+bot_app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🔄 Обновить экран"), handle_refresh))
 
 print("🤖 Бот запущен!")
 
