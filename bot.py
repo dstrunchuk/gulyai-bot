@@ -304,6 +304,7 @@ bot_app.add_handler(CallbackQueryHandler(handle_confirmation, pattern="^(confirm
 bot_app.add_handler(CallbackQueryHandler(handle_meet_response, pattern="^(agree_|decline_)"))
 bot_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
+bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 
 print("🤖 Бот запущен!")
 
