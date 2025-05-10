@@ -234,17 +234,17 @@ async def forward_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text
 
     message = (
-        f"📩 Новое сообщение от пользователя:\n"
-        f"ID: `{user.id}`\n"
-        f"Username: @{user.username or '—'}\n"
-        f"Имя: {user.full_name}\n\n"
+        f"📩 <b>Новое сообщение от пользователя</b>\n"
+        f"<b>ID:</b> <code>{user.id}</code>\n"
+        f"<b>Username:</b> @{user.username or '—'}\n"
+        f"<b>Имя:</b> {user.full_name}\n\n"
         f"{msg}"
     )
 
     await context.bot.send_message(
         chat_id=ADMIN_ID,
         text=message,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
     await update.message.reply_text("✅ Ваше сообщение получено. Спасибо!")
