@@ -226,12 +226,22 @@ async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYP
                 parse_mode="Markdown"
             )
 
-            ADMIN_ID = 987664835  # замени на свой ID
-            await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=f"👥 {query.from_user.first_name} и пользователь {from_id} согласились встретиться!"
-            )
+            ADMIN_ID = 987664835  # твой Telegram ID
 
+            try:
+                initiator = await context.bot.get_chat(int(from_id))
+                responder = query.from_user
+
+                initiator_name = f"@{initiator.username}" if initiator.username else f"id {from_id}"
+                responder_name = f"@{responder.username}" if responder.username else f"id {responder.id}"
+
+                await context.bot.send_message(
+                    chat_id=ADMIN_ID,
+                    text=f"👥 {responder_name} и {initiator_name} согласились встретиться!"
+                )
+            except Exception as e:
+                print("Ошибка при отправке уведомления админу:", e)
+                
         except Exception as e:
             print("Ошибка при уведомлении отправителя:", e)
 
