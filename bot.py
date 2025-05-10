@@ -120,7 +120,8 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "⚙️ Админка:",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📨 Рассылка", callback_data="admin_broadcast")],
-            [InlineKeyboardButton("📊 Кол-во анкет", callback_data="admin_count")]
+            [InlineKeyboardButton("📊 Кол-во анкет", callback_data="admin_count")],
+            [InlineKeyboardButton("✉️ Сообщение по ID", callback_data="admin_direct")]
         ])
     )
 
@@ -148,8 +149,28 @@ async def handle_admin_actions(update: Update, context: ContextTypes.DEFAULT_TYP
         except Exception as e:
             await query.message.reply_text(f"Ошибка при получении анкет: {e}")
 
+    elif query.data == "admin_direct":
+        context.user_data["awaiting_direct"] = True
+        await query.message.reply_text(
+            "✍️ Введите сообщение в формате:\n`1476116533::Привет!`\n\nЭто отправит сообщение по chat_id.",
+            parse_mode="Markdown"
+        )
+
 # Подтверждение рассылки
 async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get("awaiting_direct") and update.effective_user.id == ADMIN_ID:
+        context.user_data["awaiting_direct"] = False
+        try:
+            raw = update.message.text
+            chat_id_str, text = raw.split("::", 1)
+            chat_id = int(chat_id_str.strip())
+
+            await context.bot.send_message(chat_id=chat_id, text=text.strip())
+            await update.message.reply_text("✅ Сообщение отправлено.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Ошибка: {e}")
+        return
+    
     if context.user_data.get("awaiting_broadcast") and update.effective_user.id == ADMIN_ID:
         context.user_data["awaiting_broadcast"] = False
         context.user_data["pending_text"] = update.message.text
