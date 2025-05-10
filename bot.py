@@ -229,6 +229,26 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
         context.user_data["pending_direct"] = None
         await query.message.reply_text("❌ Отправка по chat_id отменена.")
 
+async def forward_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    msg = update.message.text
+
+    message = (
+        f"📩 Новое сообщение от пользователя:\n"
+        f"ID: `{user.id}`\n"
+        f"Username: @{user.username or '—'}\n"
+        f"Имя: {user.full_name}\n\n"
+        f"{msg}"
+    )
+
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=message,
+        parse_mode="Markdown"
+    )
+
+    await update.message.reply_text("✅ Ваше сообщение получено. Спасибо!")
+
 async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -314,6 +334,7 @@ bot_app.add_handler(CallbackQueryHandler(handle_meet_response, pattern="^(agree_
 bot_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp))
 bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
 bot_app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_ID), handle_text_message))
+bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.User(ADMIN_ID), forward_to_admin))
 
 print("🤖 Бот запущен!")
 
