@@ -151,9 +151,13 @@ async def handle_admin_actions(update: Update, context: ContextTypes.DEFAULT_TYP
 
     elif query.data == "admin_direct":
         context.user_data["awaiting_direct"] = True
+        context.user_data["pending_direct"] = None
+
         await query.message.reply_text(
-            "✍️ Введите сообщение в формате:\n`1476116533::Привет!`\n\nЭто отправит сообщение по chat_id.",
-            parse_mode="Markdown"
+            "✍️ Введите сообщение в формате:\n1476116533::Привет!\n\nЭто отправит сообщение по chat_id.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("❌ Отмена", callback_data="cancel_direct")]
+            ])
         )
 
 # Подтверждение рассылки
@@ -219,6 +223,11 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif query.data == "cancel_broadcast":
         context.user_data["pending_text"] = None
         await query.message.reply_text("❌ Рассылка отменена.")
+
+    elif query.data == "cancel_direct":
+        context.user_data["awaiting_direct"] = False
+        context.user_data["pending_direct"] = None
+        await query.message.reply_text("❌ Отправка по chat_id отменена.")
 
 async def handle_meet_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
